@@ -53,6 +53,8 @@ class Attribute(object):
         if instance and not self._is_map_attribute_class_object(instance):
             attr_name = instance._dynamo_to_python_attrs.get(self.attr_name, self.attr_name)
             instance.attribute_values[attr_name] = value
+            if not hasattr(instance, 'initializing_so_no_validate'):
+                instance.validate()
 
     def __get__(self, instance, owner):
         if self._is_map_attribute_class_object(instance):
@@ -218,9 +220,12 @@ class AttributeContainer(object):
         # using the `python_attr_name` as the dictionary key. "Raw" (i.e. non-subclassed) MapAttribute
         # instances do not have any Attributes defined and instead use this dictionary to store their
         # collection of name-value pairs.
+        self.initializing_so_no_validate = True
         self.attribute_values = {}
         self._set_defaults()
         self._set_attributes(**attributes)
+        del self.initializing_so_no_validate
+        self.validate()
 
     @classmethod
     def _get_attributes(cls):
